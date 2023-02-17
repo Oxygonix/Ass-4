@@ -265,6 +265,7 @@ public class HangmanManager {
             holderMap.put(entry.getKey(), entry.getValue().size());
             if (entry.getValue().size() > longestArray){
                 longestArray = entry.getValue().size();
+                hardestPattern = entry.getKey();
                 }else if (entry.getValue().size() == longestArray){
                 //then go through the old and new pattern to find which one is the best in terms
                 // of number of dashes, else do .compareTo
