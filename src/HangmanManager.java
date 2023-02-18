@@ -25,13 +25,16 @@ import java.util.*;
  */
 public class HangmanManager {
 
+    private static final char DASH = '-';
+
     // instance variables / fields
-    private Set<String> originalWords;
+    private final Set<String> ORIGINAL_WORDS;
     private ArrayList<String> currentWords;
     private String secretPattern;
     private ArrayList<String> usedGuess;
     private boolean debug;
     private int wrongGuessesAllowed;
+    private HangmanDifficulty hangmanDifficulty;
 
     // remember to make indentation spaces not whole indentions.
     // also remember to make lines less than 100 char
@@ -46,12 +49,15 @@ public class HangmanManager {
     //pre: words != null, words.size() > 0
     //post: copy the set (dictionary) and set debug to debugOn value.
     public HangmanManager(Set<String> words, boolean debugOn) {
-        if (words == null || words.size() <= 0){
+        if (words == null || words.size() == 0){
             throw new IllegalArgumentException("HangmanManager: words must not be null and length" +
                     " must be greater than 0");
         }
-        originalWords = words;
+        ORIGINAL_WORDS = words;
         debug = debugOn;
+        usedGuess = new ArrayList<>();
+        currentWords = new ArrayList<>();
+        secretPattern = "";
     }
 
     /**
@@ -64,12 +70,15 @@ public class HangmanManager {
     //pre: words != null, words.size() > 0
     //post: copy the set (dictionary) and set debug to false.
     public HangmanManager(Set<String> words) {
-        if (words == null || words.size() <= 0){
+        if (words == null || words.size() == 0){
             throw new IllegalArgumentException("HangmanManager: words must not be null and length" +
                     " must be greater than 0");
         }
-        originalWords = words;
+        ORIGINAL_WORDS = words;
         debug = false;
+        usedGuess = new ArrayList<>();
+        currentWords = new ArrayList<>();
+        secretPattern = "";
     }
 
 
@@ -81,17 +90,19 @@ public class HangmanManager {
      * with the given length
      */
 
-    // post: return number of words in original Dictionary
+    // post: return number of words in original Dictionary with given length
     public int numWords(int length) {
         int count = 0;
-        for (String word: originalWords){
-            count++;
+        for (String word: ORIGINAL_WORDS){
+            if (word.length() == length){
+                count++;
+            }
         }
         return count;
     }
 
 
-    /**
+    /*
      * Get for a new round of Hangman. Think of a round as a
      * complete game of Hangman.
      * @param wordLen the length of the word to pick this time.
@@ -111,19 +122,25 @@ public class HangmanManager {
                     "wordLen must be greater than 0");
         }
         wrongGuessesAllowed = numGuesses;
-        // hangmanDifficulty = diff;
+        hangmanDifficulty = diff;
+        secretPattern = "";
 
         for (String i: usedGuess){
-            i = null;
+            usedGuess.remove(i);
         }
 
         // No issue with efficiency as words that are extremely big don't exist.
         for (int i = 0; i < wordLen; i++){
-            secretPattern += "-";
+            secretPattern += DASH;
+        }
+
+        // Reset current Words
+        for (String word : currentWords) {
+            currentWords.remove(word);
         }
 
         // Reset available words at start.
-        for (String word : originalWords) {
+        for (String word : ORIGINAL_WORDS) {
             if (word.length() == wordLen) {
                 currentWords.add(word);
             }
@@ -140,7 +157,11 @@ public class HangmanManager {
 
     //post: return number of words that could still work.
     public int numWordsCurrent() {
-        return 0;
+        int count = 0;
+        for(String i : currentWords){
+            count++;
+        }
+        return count;
     }
 
 
@@ -167,7 +188,8 @@ public class HangmanManager {
      * has guessed so far during this round.
      */
     public String getGuessesMade() {
-        return "DEFAULT";
+        Collections.sort(usedGuess);
+        return usedGuess.toString();
     }
 
 
@@ -220,22 +242,26 @@ public class HangmanManager {
                     "before.");
         }
 
-        TreeMap<String, ArrayList<String>> map = new TreeMap<>();
+        usedGuess.add(guess + "");
+        HashMap<String, ArrayList<String>> map = new HashMap<>();
         checkPattern(map, guess);
         TreeMap<String, Integer> finalMap = hardestPattern(map);
+        if (!secretPattern.contains(guess + "")){
+            wrongGuessesAllowed--;
+        }
 
-        return map;
+        return finalMap;
     }
 
     //Post: helper method which will add words and combinations to current treeMap.
-    public void checkPattern(TreeMap<String, ArrayList<String>> map, char guess){
+    private void checkPattern(HashMap<String, ArrayList<String>> map, char guess){
 
+        String currentPattern;
         for(String word: currentWords){
             StringBuilder sb = new StringBuilder(secretPattern);
-            String currentPattern = secretPattern;
             for(int i = 0; i < word.length(); i++){
                 if(word.charAt(i) == guess){
-                    sb.insert(i, guess);
+                    sb.replace(i, i+ 1, guess + "");
                 }
             }
             currentPattern = sb.toString();
@@ -243,35 +269,64 @@ public class HangmanManager {
             if(map. containsKey(currentPattern)){
                 map.get(currentPattern).add(word);
             }else{
-                ArrayList<String> list = new ArrayList<>;
+                ArrayList<String> list = new ArrayList<>();
                 list.add(word);
                 map.put(currentPattern, list);
             }
         }
     }
 
-    public TreeMap<String, Integer> hardestPattern(TreeMap<String, ArrayList<String>> map){
+    // Post: Helper method which will update the new hardest pattern, while also creating the
+    // tree map for the finalMap.
+    private TreeMap<String, Integer> hardestPattern(HashMap<String, ArrayList<String>> map){
         TreeMap<String, Integer> holderMap = new TreeMap<>();
         // Seems easier to understand if we equal new String to secretPattern and change it at
         // very end instead of updating the hardest secret pattern every time a new hard pattern
         // is found
-        String hardestPattern = secretPattern;
+        //String hardestPattern = secretPattern;
         //This also seems easier to understand if we change longestPattern at end of method.
-        ArrayList<String> newWords;
         int longestArray = 0;
+        int currentDash = checkDashes(secretPattern);
 
         // Find the new hardest pattern, longest array, and find the new words we will be using.
         for (Map.Entry<String, ArrayList<String>> entry: map.entrySet()){
             holderMap.put(entry.getKey(), entry.getValue().size());
             if (entry.getValue().size() > longestArray){
                 longestArray = entry.getValue().size();
-                hardestPattern = entry.getKey();
-                }else if (entry.getValue().size() == longestArray){
-                //then go through the old and new pattern to find which one is the best in terms
-                // of number of dashes, else do .compareTo
+                secretPattern = entry.getKey();
+                currentDash = checkDashes(secretPattern);
+            }else if (entry.getValue().size() == longestArray){
+                int newDash = checkDashes(entry.getKey());
+                if (newDash > currentDash){
+                    longestArray = entry.getValue().size();
+                    secretPattern = entry.getKey();
+                    currentDash = checkDashes(secretPattern);
+                }else if (newDash == currentDash){
+                    int result = entry.getKey().compareTo(secretPattern);
+                    if (result > 0){
+                        longestArray = entry.getValue().size();
+                        secretPattern = entry.getKey();
+                        currentDash = checkDashes(secretPattern);
+                    }
+                }
             }
         }
+        currentWords = map.get(secretPattern);
+        System.out.println(currentWords);
+        return holderMap;
     }
+
+    // post: return the number of dashes in word.
+    private int checkDashes(String word){
+        int count = 0;
+        for (int i = 0; i < word.length(); i++){
+            if(word.charAt(i) == DASH){
+                count++;
+            }
+        }
+        return count;
+    }
+
 
 
     /**
@@ -282,6 +337,11 @@ public class HangmanManager {
      * @return return the secret word the manager picked.
      */
     public String getSecretWord() {
-        return "DEFAULT";
+        if(currentWords.size() == 1){
+            return currentWords.get(0);
+        }else{
+            int randomWord = (int) (Math.random() * (currentWords.size() - 1));
+            return currentWords.get(randomWord);
+        }
     }
 }
