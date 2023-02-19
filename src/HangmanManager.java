@@ -3,11 +3,11 @@
  *  On my honor, <NAME>, this programming assignment is my own work
  *  and I have not provided this code to any other student.
  *
- *  Name: ian torres
- *  email address: ian_tj_04@utexas.edu
- *  UTEID: it4398
+ *  Name:
+ *  email address:
+ *  UTEID:
  *  Section 5 digit ID:
- *  Grader name: brad
+ *  Grader name:
  *  Number of slip days used on this assignment:
  */
 
@@ -148,8 +148,8 @@ public class HangmanManager {
     //post: return number of words that could still work.
     public int numWordsCurrent() {
         int count = 0;
-        for(String i : currentWords){
-            count++;
+        for (int i = 0; i < currentWords.size(); i++) {
+                count++;
         }
         return count;
     }
@@ -271,45 +271,52 @@ public class HangmanManager {
     // tree map for the finalMap.
     private TreeMap<String, Integer> hardestPattern(HashMap<String, ArrayList<String>> map){
         TreeMap<String, Integer> holderMap = new TreeMap<>();
-// Seems easier to understand if we equal new String to secretPattern and change it at
-        // very end instead of updating the hardest secret pattern every time a new hard pattern
-        // is found
-        //String hardestPattern = secretPattern;
-        //This also seems easier to understand if we change longestPattern at end of method.
-        int longestArray = 0;
-        int currentDash = checkDashes(secretPattern);
-        String secondPattern = "";
+        String hardest = "";
+        String easy = "";
+        int biggest = 0;
+        int secondBiggest = 0;
 
         // Find the new hardest pattern, longest array, and find the new words we will be using.
-        for (Map.Entry<String, ArrayList<String>> entry: map.entrySet()){
+        for (Map.Entry<String, ArrayList<String>> entry: map.entrySet()) {
             holderMap.put(entry.getKey(), entry.getValue().size());
-            if (entry.getValue().size() > longestArray){
-                longestArray = entry.getValue().size();
-                secondPattern = secretPattern;
-                secretPattern = entry.getKey();
-                currentDash = checkDashes(secretPattern);
-            }else if (entry.getValue().size() == longestArray){
-                int newDash = checkDashes(entry.getKey());
-                if (newDash > currentDash){
-                    longestArray = entry.getValue().size();
-                    secondPattern = secretPattern;
-                    secretPattern = entry.getKey();
-                    currentDash = checkDashes(secretPattern);
-                }else if (newDash == currentDash){
-                    int result = entry.getKey().compareTo(secretPattern);
-                    if (result > 0){
-                        longestArray = entry.getValue().size();
-                        secondPattern = secretPattern;
-                        secretPattern = entry.getKey();
-                        currentDash = checkDashes(secretPattern);
+        }
+
+        for (Map.Entry<String, Integer> entry: holderMap.entrySet()) {
+            if (entry.getValue() > biggest){
+                hardest = entry.getKey();
+                biggest = entry.getValue();
+            }else if (entry.getValue() == biggest && holderMap.entrySet().size() > 2){
+                if(checkDashes(entry.getKey()) > checkDashes(hardest)){
+                    hardest = entry.getKey();
+                    biggest = entry.getValue();
+                }else if(checkDashes(entry.getKey()) == checkDashes(hardest)){
+                    if(entry.getKey().compareTo(hardest) < 0){
+                        hardest = entry.getKey();
+                        biggest = entry.getValue();
+                    }
+                }
+            }else {
+                if (entry.getValue() > secondBiggest) {
+                    easy = entry.getKey();
+                    secondBiggest = entry.getValue();
+                } else if (entry.getValue() == secondBiggest) {
+                    if (checkDashes(entry.getKey()) > checkDashes(easy)) {
+                        easy = entry.getKey();
+                        secondBiggest = entry.getValue();
+                    } else if (checkDashes(entry.getKey()) == checkDashes(easy)) {
+                        if (entry.getKey().compareTo(easy) < 0) {
+                            easy = entry.getKey();
+                            secondBiggest = entry.getValue();
+                        }
                     }
                 }
             }
         }
-        if(secondPattern.equals("")){
-            secondPattern = secretPattern;
+        if(easy.equals("")){
+            easy = hardest;
         }
-        DifficultyPicker(map, secondPattern);
+        secretPattern = hardest;
+        DifficultyPicker(map, easy);
         return holderMap;
     }
 
