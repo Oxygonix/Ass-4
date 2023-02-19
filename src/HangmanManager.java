@@ -3,11 +3,11 @@
  *  On my honor, <NAME>, this programming assignment is my own work
  *  and I have not provided this code to any other student.
  *
- *  Name:
- *  email address:
- *  UTEID:
+ *  Name: ian torres
+ *  email address: ian_tj_04@utexas.edu
+ *  UTEID: it4398
  *  Section 5 digit ID:
- *  Grader name:
+ *  Grader name: brad
  *  Number of slip days used on this assignment:
  */
 
@@ -35,6 +35,7 @@ public class HangmanManager {
     private boolean debug;
     private int wrongGuessesAllowed;
     private HangmanDifficulty hangmanDifficulty;
+    private int timesGuessed;
 
     // remember to make indentation spaces not whole indentions.
     // also remember to make lines less than 100 char
@@ -55,9 +56,6 @@ public class HangmanManager {
         }
         ORIGINAL_WORDS = words;
         debug = debugOn;
-        usedGuess = new ArrayList<>();
-        currentWords = new ArrayList<>();
-        secretPattern = "";
     }
 
     /**
@@ -76,9 +74,6 @@ public class HangmanManager {
         }
         ORIGINAL_WORDS = words;
         debug = false;
-        usedGuess = new ArrayList<>();
-        currentWords = new ArrayList<>();
-        secretPattern = "";
     }
 
 
@@ -124,19 +119,14 @@ public class HangmanManager {
         wrongGuessesAllowed = numGuesses;
         hangmanDifficulty = diff;
         secretPattern = "";
+        timesGuessed = 0;
 
-        for (String i: usedGuess){
-            usedGuess.remove(i);
-        }
+        usedGuess = new ArrayList<>();
+        currentWords = new ArrayList<>();
 
         // No issue with efficiency as words that are extremely big don't exist.
         for (int i = 0; i < wordLen; i++){
             secretPattern += DASH;
-        }
-
-        // Reset current Words
-        for (String word : currentWords) {
-            currentWords.remove(word);
         }
 
         // Reset available words at start.
@@ -241,6 +231,7 @@ public class HangmanManager {
             throw new IllegalArgumentException("TreeMap: cannot pick same guess as " +
                     "before.");
         }
+        timesGuessed++;
 
         usedGuess.add(guess + "");
         HashMap<String, ArrayList<String>> map = new HashMap<>();
@@ -280,40 +271,67 @@ public class HangmanManager {
     // tree map for the finalMap.
     private TreeMap<String, Integer> hardestPattern(HashMap<String, ArrayList<String>> map){
         TreeMap<String, Integer> holderMap = new TreeMap<>();
-        // Seems easier to understand if we equal new String to secretPattern and change it at
+// Seems easier to understand if we equal new String to secretPattern and change it at
         // very end instead of updating the hardest secret pattern every time a new hard pattern
         // is found
         //String hardestPattern = secretPattern;
         //This also seems easier to understand if we change longestPattern at end of method.
         int longestArray = 0;
         int currentDash = checkDashes(secretPattern);
+        String secondPattern = "";
 
         // Find the new hardest pattern, longest array, and find the new words we will be using.
         for (Map.Entry<String, ArrayList<String>> entry: map.entrySet()){
             holderMap.put(entry.getKey(), entry.getValue().size());
             if (entry.getValue().size() > longestArray){
                 longestArray = entry.getValue().size();
+                secondPattern = secretPattern;
                 secretPattern = entry.getKey();
                 currentDash = checkDashes(secretPattern);
             }else if (entry.getValue().size() == longestArray){
                 int newDash = checkDashes(entry.getKey());
                 if (newDash > currentDash){
                     longestArray = entry.getValue().size();
+                    secondPattern = secretPattern;
                     secretPattern = entry.getKey();
                     currentDash = checkDashes(secretPattern);
                 }else if (newDash == currentDash){
                     int result = entry.getKey().compareTo(secretPattern);
                     if (result > 0){
                         longestArray = entry.getValue().size();
+                        secondPattern = secretPattern;
                         secretPattern = entry.getKey();
                         currentDash = checkDashes(secretPattern);
                     }
                 }
             }
         }
-        currentWords = map.get(secretPattern);
-        System.out.println(currentWords);
+        if(secondPattern.equals("")){
+            secondPattern = secretPattern;
+        }
+        DifficultyPicker(map, secondPattern);
         return holderMap;
+    }
+
+    public void DifficultyPicker(HashMap<String, ArrayList<String>> map,
+                                 String secondPattern){
+        if (hangmanDifficulty == HangmanDifficulty.EASY){
+            if (timesGuessed % 2 == 0){
+                currentWords = map.get(secondPattern);
+                secretPattern = secondPattern;
+            }else{
+                currentWords = map.get(secretPattern);
+            }
+        }else if (hangmanDifficulty == HangmanDifficulty.MEDIUM){
+            if (timesGuessed % 4 == 0) {
+                currentWords = map.get(secondPattern);
+                secretPattern = secondPattern;
+            }else{
+                currentWords = map.get(secretPattern);
+            }
+        }else{
+            currentWords = map.get(secretPattern);
+        }
     }
 
     // post: return the number of dashes in word.
