@@ -3,17 +3,13 @@
  *  On my honor, <NAME>, this programming assignment is my own work
  *  and I have not provided this code to any other student.
  *
- *  Name:
- *  email address:
- *  UTEID:
- *  Section 5 digit ID:
- *  Grader name:
- *  Number of slip days used on this assignment:
+ *  Name: ian torres
+ *  email address: ian_tj_ 04@hotmail.com
+ *  UTEID:it4398
+ *  Section 5 digit ID:52060
+ *  Grader name:brad
+ *  Number of slip days used on this assignment:2
  */
-
-// add imports as necessary
-
-import jdk.jshell.spi.SPIResolutionException;
 
 import java.util.*;
 
@@ -25,10 +21,11 @@ import java.util.*;
  */
 public class HangmanManager {
 
-    private static final char DASH = '-';
+    private final char DASH = '-';
+    private final Set<String> ORIGINAL_WORDS;
+    private final int EVERY_FOUR = 4;
 
     // instance variables / fields
-    private final Set<String> ORIGINAL_WORDS;
     private ArrayList<String> currentWords;
     private String secretPattern;
     private ArrayList<String> usedGuess;
@@ -281,6 +278,7 @@ public class HangmanManager {
             holderMap.put(entry.getKey(), entry.getValue().size());
         }
 
+        // Finds the hardest and second hardest work whil meeting all necessary checks.
         for (Map.Entry<String, Integer> entry: holderMap.entrySet()) {
             if (entry.getValue() > biggest){
                 hardest = entry.getKey();
@@ -320,6 +318,8 @@ public class HangmanManager {
         return holderMap;
     }
 
+    // Helper method which will pick the pattern based on the difficulty
+    // post: update new currentwords and secretPattern corretctly
     public void DifficultyPicker(HashMap<String, ArrayList<String>> map,
                                  String secondPattern){
         if (hangmanDifficulty == HangmanDifficulty.EASY){
@@ -330,7 +330,7 @@ public class HangmanManager {
                 currentWords = map.get(secretPattern);
             }
         }else if (hangmanDifficulty == HangmanDifficulty.MEDIUM){
-            if (timesGuessed % 4 == 0) {
+            if (timesGuessed % EVERY_FOUR == 0) {
                 currentWords = map.get(secondPattern);
                 secretPattern = secondPattern;
             }else{
@@ -341,6 +341,7 @@ public class HangmanManager {
         }
     }
 
+    // Helper method which checks number of dashes in word.
     // post: return the number of dashes in word.
     private int checkDashes(String word){
         int count = 0;
